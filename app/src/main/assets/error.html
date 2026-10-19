@@ -13,6 +13,7 @@
     <h2>Impossible de joindre Bulle</h2>
     <p class="help" id="what">Le serveur ne répond pas.</p>
     <p class="help">Vérifiez que le téléphone est bien sur le Wi-Fi de la maison (ou sur votre VPN) et que le serveur est allumé.</p>
+    <button class="primary" id="offline" type="button" hidden>📥 Mes BD hors connexion</button>
     <button class="primary" id="retry" type="button">Réessayer</button>
     <button class="secondary" id="change" type="button">Changer de serveur</button>
   </div>
@@ -27,6 +28,16 @@
     } catch (e) {}
   }
   document.getElementById("retry").addEventListener("click", () => app && app.retry());
+  try {
+    const kept = app && app.offlineList ? JSON.parse(app.offlineList()).filter(a => a.done).length : 0;
+    if (kept) {
+      const b = document.getElementById("offline");
+      b.hidden = false;
+      b.textContent = "📥 Lire mes BD hors connexion (" + kept + ")";
+      b.addEventListener("click", () => app.openOffline());
+      document.getElementById("retry").className = "secondary";
+    }
+  } catch (e) {}
   document.getElementById("change").addEventListener("click", () => app && app.changeServer());
 </script>
 </body>
