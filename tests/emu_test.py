@@ -37,6 +37,21 @@ def shot(name):
         f.write(data)
 
 
+def top():
+    """Activité au premier plan (pour savoir si l'appli est bien devant)."""
+    out = adb("shell", "dumpsys", "activity", "activities")
+    m = re.search(r"(?:topResumedActivity|mResumedActivity)[^\n]*?(\S+/\S+)", out)
+    return m.group(1) if m else "?"
+
+
+def dismiss_fullscreen_hint():
+    """Bandeau système « Viewing full screen » (affiché une seule fois par Android) : on le ferme."""
+    n = find("Got it") or find("Compris") or find("OK")
+    if n is not None:
+        tap(n)
+        time.sleep(1)
+
+
 def nodes():
     adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
     x = adb("shell", "cat", "/sdcard/ui.xml")
@@ -107,6 +122,7 @@ def run():
         tap(n)
         time.sleep(8)
         shot("4-lecteur")
+        dismiss_fullscreen_hint()
         win = adb("shell", "dumpsys", "window", "windows")
         hidden = "mStatusBarHidden" in win or bool(re.search(r"statusBars.*visible=false|isVisible=false", win))
         note(True, "lecteur ouvert (voir capture 4) ; barres système masquées : " + ("oui" if hidden else "non vérifiable"))
@@ -114,16 +130,17 @@ def run():
         time.sleep(3)
         shot("5-lecteur-page-suivante")
 
-        # 5. bouton retour d'Android
+        # 5. bouton retour d'Android : on doit revenir à la bibliothèque, dans l'appli
         adb("shell", "input", "keyevent", "4")
-        time.sleep(4)
+        back = wait_for("Bibliothèque", 15) or wait_for("BIBLIOTHÈQUE", 3)
+        time.sleep(2)
         shot("6-retour")
-        alive = PKG in adb("shell", "dumpsys", "activity", "activities")
-        note(alive, "bouton retour : on revient dans l'appli (pas de fermeture)")
+        note(back is not None and PKG in top(), "bouton retour : retour à la bibliothèque (premier plan : " + top() + ")")
 
     # 6. raccourci « Changer de serveur »
-    adb("shell", "am", "start", "-n", ACT, "-a", PKG + ".CHANGE_SERVER")
+    adb("shell", "am", "start", "-W", "-a", PKG + ".CHANGE_SERVER", "-n", ACT)
     n = wait_for("Se connecter", 20)
+    report.append("       (premier plan après le raccourci : " + top() + ")")
     shot("7-changer-de-serveur")
     note(n is not None, "raccourci « Changer de serveur » : écran de connexion")
 
@@ -140,8 +157,8 @@ def run():
 
     crash = adb("logcat", "-d", "-b", "crash")
     note(PKG not in crash, "aucun plantage de l'appli dans le journal Android")
-    with open(f"{OUT}/journal-android.txt", "w") as f:
-        f.write(adb("logcat", "-d", "-t", "4000"))
+    with open(f"{OUT}/journal.txt", "w") as f:
+        f.write(adb("logcat", "-d", "-t", "3000"))
 
 
 try:
