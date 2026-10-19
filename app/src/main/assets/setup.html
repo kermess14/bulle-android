@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bulle</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <div class="logo"><svg viewBox="0 0 108 108" aria-hidden="true"><rect width="108" height="108" rx="24" fill="#FFD43B"/><path fill="#1A1A1A" d="M57,34 C73,34 84,43 84,55 C84,67 73,76 57,76 C54,76 51,75.6 48.4,74.9 L37,82 L39.6,71.5 C34,67.6 30,61.9 30,55 C30,43 41,34 57,34 Z"/><path fill="#fff" stroke="#1A1A1A" stroke-width="2.6" d="M54,31 C70,31 81,40 81,52 C81,64 70,73 54,73 C51,73 48,72.6 45.4,71.9 L34,79 L36.6,68.5 C31,64.6 27,58.9 27,52 C27,40 38,31 54,31 Z"/><circle cx="42" cy="52" r="4" fill="#E8590C"/><circle cx="54" cy="52" r="4" fill="#E8590C"/><circle cx="66" cy="52" r="4" fill="#E8590C"/></svg><div><h1>BULLE</h1><p>Votre bibliothèque de BD, chez vous</p></div></div>
+
+  <div class="card">
+    <h2>Trouver Bulle sur le Wi-Fi</h2>
+    <p class="help">Le téléphone doit être sur le même Wi-Fi que le serveur Bulle.</p>
+    <button class="primary" id="scan" type="button">Chercher</button>
+    <div class="msg" id="scanmsg"></div>
+    <ul class="found" id="found"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Ou entrer son adresse</h2>
+    <p class="help">Celle que vous tapez dans le navigateur, par exemple <b>192.168.0.213:2205</b>.</p>
+    <form id="f">
+      <label for="addr">Adresse du serveur</label>
+      <input id="addr" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="192.168.0.213:2205">
+      <button class="primary" id="go" type="submit">Se connecter</button>
+      <div class="msg" id="msg"></div>
+    </form>
+  </div>
+
+  <p class="foot">Bulle pour Android <span id="ver"></span> — les BD restent sur votre serveur, l'appli ne fait que les afficher.</p>
+</main>
+<script>
+  const $ = s => document.querySelector(s);
+  const app = window.BulleApp;
+  const addr = $("#addr"), go = $("#go"), msg = $("#msg"), scanBtn = $("#scan"), scanMsg = $("#scanmsg"), found = $("#found");
+  if (app) {
+    const cur = app.getServer();
+    if (cur) addr.value = cur.replace(/^http:\/\//, "");
+    $("#ver").textContent = app.getVersion();
+  }
+  function say(el, text, kind) { el.className = "msg" + (kind ? " " + kind : ""); el.innerHTML = text; }
+  function connect(value) {
+    if (!app) return;
+    go.disabled = true;
+    say(msg, '<span class="spin"></span>Connexion…');
+    app.connect(value);
+  }
+  window.onConnect = (ok, text) => {
+    say(msg, text, ok ? "good" : "bad");
+    if (!ok) go.disabled = false;
+  };
+  $("#f").addEventListener("submit", e => { e.preventDefault(); if (addr.value.trim()) connect(addr.value); });
+  scanBtn.addEventListener("click", () => {
+    if (!app) return;
+    scanBtn.disabled = true; found.innerHTML = "";
+    say(scanMsg, '<span class="spin"></span>Recherche sur le réseau… (jusqu\'à 20 secondes)');
+    app.scan();
+  });
+  window.onScan = (list, net) => {
+    scanBtn.disabled = false;
+    if (!list.length) { say(scanMsg, "Aucun serveur Bulle trouvé (" + net + "). Entrez son adresse ci-dessous.", "bad"); return; }
+    say(scanMsg, list.length === 1 ? "Un serveur trouvé :" : list.length + " serveurs trouvés :", "good");
+    for (const s of list) {
+      const li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = s.url.replace(/^http:\/\//, "") + "<small>Bulle " + s.version + "</small>";
+      b.addEventListener("click", () => { addr.value = s.url.replace(/^http:\/\//, ""); connect(s.url); });
+      li.appendChild(b); found.appendChild(li);
+    }
+  };
+</script>
+</body>
+</html>
