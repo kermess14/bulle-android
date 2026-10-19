@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Bulle</string>
     <string name="shortcut_server">Changer de serveur</string>
+    <string name="shortcut_offline">BD hors connexion</string>
 </resources>
