@@ -83,18 +83,19 @@ def box(n):
 
 
 def info_button():
-    """Petit bouton « i » (fiche) en bas à gauche de la première couverture d'album."""
+    """Petit bouton « i » (fiche) en bas à gauche de la première couverture : repéré d'après le titre écrit sous
+    la couverture (le bouton est 60 px à droite de son début et 95 px au-dessus)."""
     ns = nodes()
-    cards = [n for n in ns if "Essai" in n.get("text", "") + n.get("content-desc", "") or "serie" in n.get("text", "") + n.get("content-desc", "")]
-    for c in cards:
-        x1, y1, x2, y2 = box(c)
-        if x2 - x1 < 200 or y2 - y1 < 300:
-            continue                      # le titre seul, pas la carte entière
-        for n in ns:
-            a1, b1, a2, b2 = box(n)
-            if 20 < a2 - a1 < 170 and 20 < b2 - b1 < 170 and x1 <= a1 and a2 <= (x1 + x2) // 2 and (y1 + y2) // 2 <= b1 and b2 <= y2:
-                return ((a1 + a2) // 2, (b1 + b2) // 2)
-        return (x1 + 65, y2 - 144)        # repli : position habituelle du bouton
+    for n in ns:
+        if "Fiche" in n.get("content-desc", "") + n.get("text", ""):
+            x1, y1, x2, y2 = box(n)
+            if x2 - x1 < 200:
+                return ((x1 + x2) // 2, (y1 + y2) // 2)
+    caps = [n for n in ns if n.get("text", "").strip().lower() in ("autre serie - t01", "essai - t02", "essai - t01")]
+    caps.sort(key=lambda n: (box(n)[1], box(n)[0]))
+    if caps:
+        x1, y1, _, _ = box(caps[0])
+        return (x1 + 60, y1 - 95)
     return None
 
 
