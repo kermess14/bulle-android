@@ -94,8 +94,10 @@ def info_button():
     caps = [n for n in ns if n.get("text", "").strip().lower() in ("autre serie - t01", "essai - t02", "essai - t01")]
     caps.sort(key=lambda n: (box(n)[1], box(n)[0]))
     if caps:
+        # présentation téléphone (Bulle 0.26+) : bouton de 24 px à 6 px du bord gauche et 8 px du bas de la pochette,
+        # titre 6 px sous la pochette ; écran 1080 px pour 412 px CSS → ×2,6
         x1, y1, _, _ = box(caps[0])
-        return (x1 + 60, y1 - 95)
+        return (x1 + 47, y1 - 68)
     return None
 
 
@@ -182,10 +184,29 @@ def run():
 
         # 5. bouton retour d'Android : on doit revenir à la bibliothèque, dans l'appli
         adb("shell", "input", "keyevent", "4")
-        back = wait_for("Bibliothèque", 15) or wait_for("BIBLIOTHÈQUE", 3)
+        back = wait_for("Ajouts récents", 15) or wait_for("Reprendre la lecture", 3)
         time.sleep(2)
         shot("6-retour")
         note(back is not None and PKG in top(), "bouton retour : retour à la bibliothèque (premier plan : " + top() + ")")
+
+    # 5b. barre d'onglets du bas et menu « Plus » (présentation téléphone de Bulle)
+    plus = find_exact("Plus")
+    if plus is not None:
+        tap(plus)
+        n = wait_for("Historique", 10)
+        shot("6b-menu-plus")
+        note(n is not None, "présentation téléphone : barre du bas, menu « Plus » ouvert")
+        if n is not None:
+            r = find_exact("Réglages")
+            if r is not None:
+                tap(r)
+                n = wait_for("Lecteur", 15)
+                shot("6c-reglages")
+                note(n is not None, "menu « Plus » → Réglages : liste des rubriques")
+        adb("shell", "input", "keyevent", "4")
+        time.sleep(1.5)
+    else:
+        note(False, "présentation téléphone : onglet « Plus » introuvable")
 
     # 6. raccourci « Changer de serveur »
     adb("shell", "am", "start", "-W", "-a", PKG + ".CHANGE_SERVER", "-n", ACT)
