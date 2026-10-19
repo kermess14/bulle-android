@@ -10,4 +10,14 @@
             android:targetPackage="io.github.kermess14.bulle"
             android:targetClass="io.github.kermess14.bulle.MainActivity" />
     </shortcut>
+    <shortcut
+        android:shortcutId="offline"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_offline">
+        <intent
+            android:action="io.github.kermess14.bulle.OFFLINE"
+            android:targetPackage="io.github.kermess14.bulle"
+            android:targetClass="io.github.kermess14.bulle.MainActivity" />
+    </shortcut>
 </shortcuts>
