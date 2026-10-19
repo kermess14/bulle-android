@@ -157,7 +157,7 @@ def run():
         note(g is not None, "fiche d'album : bouton « Garder hors connexion »")
         if g is not None:
             tap(g)
-            ok = wait_for("✓ Hors connexion", 120)
+            ok = wait_for("Retirer", 120)          # « ✓ Hors connexion » + « Retirer » : téléchargement terminé
             shot("3c-album-garde")
             note(ok is not None, "album gardé hors connexion (téléchargement terminé)")
         x = find("Fermer")
