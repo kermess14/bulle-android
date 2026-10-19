@@ -78,6 +78,26 @@ def find_exact(text):
     return None
 
 
+def box(n):
+    return list(map(int, re.findall(r"\d+", n.get("bounds", "[0,0][0,0]"))))
+
+
+def info_button():
+    """Petit bouton « i » (fiche) en bas à gauche de la première couverture d'album."""
+    ns = nodes()
+    cards = [n for n in ns if "Essai" in n.get("text", "") + n.get("content-desc", "") or "serie" in n.get("text", "") + n.get("content-desc", "")]
+    for c in cards:
+        x1, y1, x2, y2 = box(c)
+        if x2 - x1 < 200 or y2 - y1 < 300:
+            continue                      # le titre seul, pas la carte entière
+        for n in ns:
+            a1, b1, a2, b2 = box(n)
+            if 20 < a2 - a1 < 170 and 20 < b2 - b1 < 170 and x1 <= a1 and a2 <= (x1 + x2) // 2 and (y1 + y2) // 2 <= b1 and b2 <= y2:
+                return ((a1 + a2) // 2, (b1 + b2) // 2)
+        return (x1 + 65, y2 - 144)        # repli : position habituelle du bouton
+    return None
+
+
 def wait_for(text, timeout=30):
     end = time.time() + timeout
     while time.time() < end:
@@ -127,10 +147,10 @@ def run():
     note(n is not None, "bibliothèque affichée (albums « Essai » visibles)")
 
     # 3b. garder un album hors connexion depuis sa fiche (bouton ajouté par Bulle quand il tourne dans l'appli)
-    f = find_exact("i") or find("Fiche de l'album")
+    f = info_button()
     if f is not None:
-        report.append("       (bouton fiche : " + f.get("bounds", "?") + " « " + f.get("text", "") + " »)")
-        tap(f)
+        report.append("       (bouton fiche : " + str(f) + ")")
+        adb("shell", "input", "tap", str(f[0]), str(f[1]))
         g = wait_for("Garder hors connexion", 15)
         shot("3b-fiche-album")
         note(g is not None, "fiche d'album : bouton « Garder hors connexion »")
