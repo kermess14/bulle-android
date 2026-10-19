@@ -1,0 +1,67 @@
+name: Fabriquer l'appli
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      # clé de signature stable (facultative) : secret BULLE_KEYSTORE_B64 = fichier .jks encodé en base64
+      - name: Clé de signature
+        env:
+          KS: ${{ secrets.BULLE_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > "$RUNNER_TEMP/bulle.jks"
+            echo "BULLE_KEYSTORE_FILE=$RUNNER_TEMP/bulle.jks" >> "$GITHUB_ENV"
+            echo "Signature avec la clé du dépôt"
+          else
+            echo "::warning::Pas de clé de signature (secret BULLE_KEYSTORE_B64) : clé de débogage, désinstaller l'ancienne version avant d'installer celle-ci"
+          fi
+
+      - name: Fabrication de l'APK
+        env:
+          BULLE_KEYSTORE_PASSWORD: ${{ secrets.BULLE_KEYSTORE_PASSWORD }}
+          BULLE_KEY_ALIAS: ${{ secrets.BULLE_KEY_ALIAS }}
+          BULLE_KEY_PASSWORD: ${{ secrets.BULLE_KEY_PASSWORD }}
+        run: gradle --no-daemon assembleRelease
+
+      - name: Nom du fichier
+        run: cp app/build/outputs/apk/release/app-release.apk Bulle-essai-${{ github.run_number }}.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bulle-essai-${{ github.run_number }}
+          path: Bulle-essai-${{ github.run_number }}.apk
+
+      # version d'essai publiée sur la page « Releases » (téléchargeable depuis le téléphone, sans compte GitHub)
+      - name: Publier la version d'essai
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete essai --yes --cleanup-tag || true
+          gh release create essai Bulle-essai-${{ github.run_number }}.apk \
+            --prerelease --target "${{ github.sha }}" \
+            --title "Version d'essai n°${{ github.run_number }}" \
+            --notes "Dernière version d'essai de l'appli Bulle pour Android. Sur le téléphone : touchez le fichier .apk ci-dessous pour le télécharger, puis ouvrez-le pour l'installer (Android demandera d'autoriser l'installation depuis le navigateur). Si Android refuse d'installer par-dessus l'ancienne version, désinstallez-la d'abord."
