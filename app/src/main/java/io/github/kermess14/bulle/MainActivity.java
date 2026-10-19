@@ -107,6 +107,12 @@ public class MainActivity extends Activity {
 
         if (ACTION_CHANGE_SERVER.equals(getIntent().getAction())) { web.loadUrl(SETUP); return; }
         if (ACTION_OFFLINE.equals(getIntent().getAction()) && !server().isEmpty()) { web.loadUrl(server() + OfflineStore.LIST_PATH); return; }
+        String relaunch = prefs.getString("relaunch", null);
+        if (relaunch != null) {
+            prefs.edit().remove("relaunch").apply();
+            web.loadUrl(relaunch);
+            return;
+        }
         if (state != null && web.restoreState(state) != null) return;
         String server = server();
         if (server.isEmpty()) web.loadUrl(SETUP);
@@ -248,6 +254,18 @@ public class MainActivity extends Activity {
                 }
             }
 
+            // le moteur d'affichage s'est arrêté (mémoire saturée par de grandes planches…) : on repart proprement
+            // au lieu de laisser Android fermer l'appli
+            @Override
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                Log.w("BulleApp", "moteur d'affichage arrêté (plantage=" + detail.didCrash() + ") : redémarrage de l'écran");
+                String last = view.getUrl();
+                root.removeView(view);   // détruite ensuite par onDestroy
+                if (last != null && last.startsWith("http")) prefs.edit().putString("relaunch", last).apply();
+                recreate();
+                return true;
+            }
+
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (!request.isForMainFrame()) return;
@@ -373,7 +391,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         bg.shutdownNow();
-        web.destroy();
+        try {
+            web.destroy();
+        } catch (Exception ignored) {
+        }
         super.onDestroy();
     }
 
