@@ -116,7 +116,8 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
-          target: google_apis
+          # image Android « nue » (sans services Google) : leur mise à jour en arrière-plan tue les applis au hasard
+          target: default
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
