@@ -119,6 +119,25 @@ def run():
     shot("3-bibliotheque")
     note(n is not None, "bibliothèque affichée (albums « Essai » visibles)")
 
+    # 3b. garder un album hors connexion depuis sa fiche (bouton ajouté par Bulle quand il tourne dans l'appli)
+    f = find("Fiche de l'album")
+    if f is not None:
+        tap(f)
+        g = wait_for("Garder hors connexion", 15)
+        shot("3b-fiche-album")
+        note(g is not None, "fiche d'album : bouton « Garder hors connexion »")
+        if g is not None:
+            tap(g)
+            ok = wait_for("✓ Hors connexion", 120)
+            shot("3c-album-garde")
+            note(ok is not None, "album gardé hors connexion (téléchargement terminé)")
+        x = find("Fermer")
+        if x is not None:
+            tap(x)
+            time.sleep(1.5)
+    else:
+        note(False, "fiche d'album introuvable")
+
     # 4. ouverture d'un album : lecteur en plein écran
     if n is not None:
         tap(n)
@@ -156,6 +175,25 @@ def run():
         n = wait_for("Impossible de joindre", 30)
         shot("8-serveur-arrete")
         note(n is not None, "serveur arrêté : écran « Impossible de joindre Bulle »")
+
+        # 8. lecture sans réseau de l'album gardé
+        b = wait_for("hors connexion (", 10)
+        note(b is not None, "écran d'erreur : bouton « Lire mes BD hors connexion »")
+        if b is not None:
+            tap(b)
+            lire = wait_for("Lire", 20)
+            time.sleep(1)
+            shot("9-liste-hors-connexion")
+            note(lire is not None, "page « Hors connexion » : album gardé listé")
+            if lire is not None:
+                tap(lire)
+                time.sleep(8)
+                shot("10-lecture-sans-reseau")
+                adb("shell", "input", "swipe", "900", "1200", "200", "1200", "250")
+                time.sleep(3)
+                shot("11-lecture-sans-reseau-page-suivante")
+                same = open(f"{OUT}/10-lecture-sans-reseau.png", "rb").read() != open(f"{OUT}/11-lecture-sans-reseau-page-suivante.png", "rb").read()
+                note(same, "lecture sans réseau : pages affichées et page suivante (voir captures 10 et 11)")
 
     crash = adb("logcat", "-d", "-b", "crash")
     note(PKG not in crash, "aucun plantage de l'appli dans le journal Android")
