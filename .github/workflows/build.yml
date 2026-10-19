@@ -84,7 +84,7 @@ jobs:
         with:
           repository: kermess14/bulle
           # branche du serveur à essayer (main une fois les nouveautés fusionnées)
-          ref: lot-54
+          ref: lot-55
           path: serveur
 
       - uses: actions/setup-python@v6
