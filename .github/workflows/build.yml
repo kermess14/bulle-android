@@ -9,6 +9,11 @@ on:
 permissions:
   contents: write
 
+# plusieurs envois d'affilée : seule la dernière fabrication va au bout (la version d'essai n'est publiée qu'une fois)
+concurrency:
+  group: fabrication-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   apk:
     # image Ubuntu 24.04 : le SDK Android y est déjà installé (licences acceptées)
