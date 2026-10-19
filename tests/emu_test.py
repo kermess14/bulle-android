@@ -71,6 +71,13 @@ def find(text):
     return None
 
 
+def find_exact(text):
+    for n in nodes():
+        if n.get("text", "") == text or n.get("content-desc", "") == text:
+            return n
+    return None
+
+
 def wait_for(text, timeout=30):
     end = time.time() + timeout
     while time.time() < end:
@@ -120,8 +127,9 @@ def run():
     note(n is not None, "bibliothèque affichée (albums « Essai » visibles)")
 
     # 3b. garder un album hors connexion depuis sa fiche (bouton ajouté par Bulle quand il tourne dans l'appli)
-    f = find("Fiche de l'album")
+    f = find_exact("i") or find("Fiche de l'album")
     if f is not None:
+        report.append("       (bouton fiche : " + f.get("bounds", "?") + " « " + f.get("text", "") + " »)")
         tap(f)
         g = wait_for("Garder hors connexion", 15)
         shot("3b-fiche-album")
@@ -198,7 +206,9 @@ def run():
     crash = adb("logcat", "-d", "-b", "crash")
     note(PKG not in crash, "aucun plantage de l'appli dans le journal Android")
     with open(f"{OUT}/journal.txt", "w") as f:
-        f.write(adb("logcat", "-d", "-s", "BulleApp:*", "ActivityTaskManager:I", "AndroidRuntime:E", "chromium:I"))
+        f.write(adb("logcat", "-d", "-s", "BulleApp:*", "ActivityTaskManager:I", "ActivityManager:I", "AndroidRuntime:E",
+                    "chromium:I", "lowmemorykiller:*", "libc:*", "DEBUG:*", "cr_AwContents:*"))
+        f.write("\n---- crash ----\n" + adb("logcat", "-d", "-b", "crash"))
 
 
 try:
