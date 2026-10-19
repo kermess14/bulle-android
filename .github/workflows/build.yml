@@ -131,5 +131,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd screens
-          for f in *.png rapport.txt; do [ -f "$f" ] && cp "$f" "essai-$f"; done
+          for f in *.png rapport.txt journal.txt; do [ -f "$f" ] && cp "$f" "essai-$f"; done
           gh release upload essai essai-* --clobber -R "${{ github.repository }}" || true
