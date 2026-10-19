@@ -1,0 +1,48 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "io.github.kermess14.bulle"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "io.github.kermess14.bulle"
+        minSdk 26
+        targetSdk 36
+        // numéro de version : celui de la fabrication GitHub (augmente tout seul), et le nom lisible
+        versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")
+        versionName "0.1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+    }
+
+    signingConfigs {
+        // Clé de signature : fournie par les « secrets » du dépôt GitHub (BULLE_KEYSTORE…), jamais écrite dans le code.
+        // Sans elle, l'appli est signée avec une clé de débogage différente à chaque fabrication.
+        def ks = System.getenv("BULLE_KEYSTORE_FILE")
+        if (ks && file(ks).exists()) {
+            bulle {
+                storeFile file(ks)
+                storePassword System.getenv("BULLE_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("BULLE_KEY_ALIAS")
+                keyPassword System.getenv("BULLE_KEY_PASSWORD") ?: System.getenv("BULLE_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.findByName("bulle") ?: signingConfigs.debug
+        }
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
