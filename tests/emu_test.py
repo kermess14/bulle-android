@@ -87,6 +87,8 @@ def tap(n):
 
 
 def run():
+    # le bandeau « Viewing full screen » qu'Android montre une seule fois (il capte le bouton retour) : déjà vu
+    adb("shell", "settings", "put", "secure", "immersive_mode_confirmations", "confirmed")
     adb("install", "-r", APK, check=True, timeout=180)
     adb("shell", "am", "start", "-W", "-n", ACT)
 
