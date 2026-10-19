@@ -46,7 +46,7 @@ def top():
 
 def dismiss_fullscreen_hint():
     """Bandeau système « Viewing full screen » (affiché une seule fois par Android) : on le ferme."""
-    n = find("Got it") or find("Compris") or find("OK")
+    n = find("Got it") or find("Compris")
     if n is not None:
         tap(n)
         time.sleep(1)
@@ -158,7 +158,7 @@ def run():
     crash = adb("logcat", "-d", "-b", "crash")
     note(PKG not in crash, "aucun plantage de l'appli dans le journal Android")
     with open(f"{OUT}/journal.txt", "w") as f:
-        f.write(adb("logcat", "-d", "-t", "3000"))
+        f.write(adb("logcat", "-d", "-s", "BulleApp:*", "ActivityTaskManager:I", "AndroidRuntime:E", "chromium:I"))
 
 
 try:
