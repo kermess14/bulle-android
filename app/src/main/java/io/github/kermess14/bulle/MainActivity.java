@@ -67,8 +67,10 @@ public class MainActivity extends Activity {
     private static final int DEFAULT_PORT = 2205;
     private static final int PICK_FILE = 41;
     static final String ACTION_CHANGE_SERVER = "io.github.kermess14.bulle.CHANGE_SERVER";
+    static final String ACTION_OFFLINE = "io.github.kermess14.bulle.OFFLINE";
 
     private WebView web;
+    private OfflineStore offline;
     private FrameLayout root;
     private SharedPreferences prefs;
     private boolean reading = false;            // dans le lecteur : plein écran, écran allumé
@@ -95,10 +97,16 @@ public class MainActivity extends Activity {
             return insets;
         });
 
+        offline = new OfflineStore(this);
+        offline.setServer(server());
+        offline.setListener((id, done, total, st) ->
+                js("window.onOfflineProgress && onOfflineProgress(" + id + "," + done + "," + total + "," + q(st) + ")"));
+
         setupWebView();
         setupBack();
 
         if (ACTION_CHANGE_SERVER.equals(getIntent().getAction())) { web.loadUrl(SETUP); return; }
+        if (ACTION_OFFLINE.equals(getIntent().getAction()) && !server().isEmpty()) { web.loadUrl(server() + OfflineStore.LIST_PATH); return; }
         if (state != null && web.restoreState(state) != null) return;
         String server = server();
         if (server.isEmpty()) web.loadUrl(SETUP);
@@ -113,6 +121,9 @@ public class MainActivity extends Activity {
         if (ACTION_CHANGE_SERVER.equals(intent.getAction())) {
             setReading(false);
             web.loadUrl(SETUP);
+        } else if (ACTION_OFFLINE.equals(intent.getAction()) && !server().isEmpty()) {
+            setReading(false);
+            web.loadUrl(server() + OfflineStore.LIST_PATH);
         }
     }
 
@@ -201,6 +212,19 @@ public class MainActivity extends Activity {
                 return true;
             }
 
+            // albums gardés : pages lues sur le téléphone ; serveur injoignable : tout le lecteur depuis le téléphone
+            @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (!isOurServer(request.getUrl())) return null;
+                return offline.intercept(request);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                // retour du réseau : la page lue hors connexion est renvoyée au serveur
+                if (url != null && url.startsWith(server()) && "/".equals(Uri.parse(url).getPath())) offline.syncProgress();
+            }
+
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 Log.i("BulleApp", "page : " + url);
@@ -210,6 +234,18 @@ public class MainActivity extends Activity {
             @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
                 setReading(isReaderUrl(url));
+                // page atteinte dans un album gardé (renvoyée au serveur plus tard si on lit sans réseau)
+                if (isReaderUrl(url)) {
+                    Uri u = Uri.parse(url);
+                    String pg = u.getQueryParameter("page");
+                    List<String> seg = u.getPathSegments();
+                    if (pg != null && seg.size() == 2) {
+                        try {
+                            offline.notePage(Integer.parseInt(seg.get(1)), Integer.parseInt(pg), !offline.lastKnownUp());
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
             }
 
             @Override
@@ -219,6 +255,7 @@ public class MainActivity extends Activity {
                 if (url.startsWith("file:")) return;
                 failedUrl = url;
                 failedReason = String.valueOf(error.getDescription());
+                offline.markDown();
                 setReading(false);
                 view.loadUrl(ERROR);
             }
@@ -460,6 +497,7 @@ public class MainActivity extends Activity {
                     return;
                 }
                 prefs.edit().putString(KEY_SERVER, base).apply();
+                offline.setServer(base);
                 final String target = base + "/";
                 js("window.onConnect && onConnect(true, " + q("Connecté à Bulle " + v) + ")");
                 ui.postDelayed(() -> {
@@ -502,6 +540,30 @@ public class MainActivity extends Activity {
                     }
                 }
                 js("window.onScan && onScan(" + arr + ", " + q("Réseau " + prefix + "x") + ")");
+            });
+        }
+
+        // ---- lecture hors connexion (boutons de la fiche d'album dans Bulle, page « Hors connexion »)
+        @JavascriptInterface
+        public String offlineState(int id) { return offline.state(id); }
+
+        @JavascriptInterface
+        public String offlineList() { return offline.list(); }
+
+        @JavascriptInterface
+        public void offlineDownload(int id) { offline.download(id); }
+
+        @JavascriptInterface
+        public void offlineCancel(int id) { offline.cancel(id); }
+
+        @JavascriptInterface
+        public void offlineRemove(int id) { offline.remove(id); }
+
+        @JavascriptInterface
+        public void openOffline() {
+            ui.post(() -> {
+                setReading(false);
+                web.loadUrl(server() + OfflineStore.LIST_PATH);
             });
         }
 
