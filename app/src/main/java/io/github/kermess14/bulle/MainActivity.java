@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -107,6 +108,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        Log.i("BulleApp", "onNewIntent " + intent.getAction());
         setIntent(intent);
         if (ACTION_CHANGE_SERVER.equals(intent.getAction())) {
             setReading(false);
@@ -201,6 +203,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                Log.i("BulleApp", "page : " + url);
                 setReading(isReaderUrl(url));
             }
 
@@ -302,6 +305,7 @@ public class MainActivity extends Activity {
 
     private void goBack() {
         String url = web.getUrl();
+        Log.i("BulleApp", "retour : url=" + url + " canGoBack=" + web.canGoBack() + " historique=" + web.copyBackForwardList().getSize());
         if (url != null && url.startsWith(ERROR)) { finish(); return; }
         if (web.canGoBack()) web.goBack();
         else finish();
@@ -318,6 +322,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        Log.i("BulleApp", "onPause (finishing=" + isFinishing() + ")");
         web.onPause();
         CookieManager.getInstance().flush();
     }
