@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Une bulle de BD (dessinée pour Bulle) : zone utile de l'icône adaptative = cercle de 66 au centre du carré de 108 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- ombre décalée, façon trait de BD -->
+    <path android:fillColor="#1A1A1A"
+        android:pathData="M57,34 C73,34 84,43 84,55 C84,67 73,76 57,76 C54,76 51,75.6 48.4,74.9 L37,82 L39.6,71.5 C34,67.6 30,61.9 30,55 C30,43 41,34 57,34 Z" />
+    <path android:fillColor="#FFFFFF" android:strokeColor="#1A1A1A" android:strokeWidth="2.6"
+        android:pathData="M54,31 C70,31 81,40 81,52 C81,64 70,73 54,73 C51,73 48,72.6 45.4,71.9 L34,79 L36.6,68.5 C31,64.6 27,58.9 27,52 C27,40 38,31 54,31 Z" />
+    <!-- trois points de suspension -->
+    <path android:fillColor="#E8590C" android:pathData="M42,52 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path android:fillColor="#E8590C" android:pathData="M54,52 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path android:fillColor="#E8590C" android:pathData="M66,52 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+</vector>
